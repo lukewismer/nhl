@@ -1,10 +1,13 @@
-import requests, json, bs4
+from typing import final
+import requests
+from webscraper import web_scrape_advanced_stats
+
+YEAR = '20212022'
+
 
 def main():
     player_ids = get_all_teams_rosters(get_team_ids())
     get_all_players_data(player_ids)
-    
-
 
 def get_team_ids():
     # Gets all team Ids and returns a list
@@ -58,6 +61,9 @@ def get_all_players_data(teams_player_ids):
             res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=yearByYear')
             stats_data = res.json()
 
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=homeAndAway')
+            home_away_data = res.json()
+
             player_data = {}
 
             player_data['info'] = get_player_info(info_data)
@@ -65,6 +71,8 @@ def get_all_players_data(teams_player_ids):
             player_data['position'] = get_player_position(info_data)
             player_data['minor_leagues_stats'] = get_minor_hockey_stats(stats_data)
             player_data['nhl_stats'] = get_nhl_hockey_stats(stats_data)
+            player_data['home_away_splits'] = get_home_away_splits(home_away_data)
+            #player_data['advanced_stats'] = web_scrape_advanced_stats(player_id)
         
 def get_player_info(data):
     # Gets an individual players info
@@ -137,6 +145,7 @@ def get_minor_hockey_stats(data):
     return minor_stats
 
 def get_nhl_hockey_stats(data):
+    # Retrieves all nhl stats for given player in formatted dict
 
     pro_stats = []
 
@@ -170,5 +179,72 @@ def get_nhl_hockey_stats(data):
             season_stats['stats']['plus_minus'] = season['stat']['plusMinus']
             season_stats['stats']['shifts'] = season['stat']['shifts']
             season_stats['stats']['games_played'] = season['stat']['games']
+
+            pro_stats.append(season_stats)
+
+    return pro_stats
+
+def get_home_away_splits(data):
+    
+    final_data = {}
+
+    home_data = {}
+    away_data = {}
+
+    if len(data['stats'][0]['splits']) == 2:
+
+        home_parsed = data['stats'][0]['splits'][0]['stat']
+        away_parsed = data['stats'][0]['splits'][1]['stat']
+
+        home_data['goals'] = home_parsed['goals']
+        home_data['assists'] = home_parsed['assists']
+        home_data['points'] = home_parsed['points']
+        home_data['pims'] = home_parsed['penaltyMinutes']
+        home_data['shots'] = home_parsed['shots']
+        home_data['hits'] = home_parsed['hits']
+        home_data['power_play_goals'] = home_parsed['powerPlayGoals']
+        home_data['power_play_points'] = home_parsed['powerPlayPoints']
+        home_data['power_play_toi'] = home_parsed['powerPlayTimeOnIcePerGame']
+        home_data['even_toi'] = home_parsed['evenTimeOnIcePerGame']
+        home_data['short_handed_toi'] = home_parsed['shortHandedTimeOnIcePerGame']
+        home_data['short_handed_goals'] = home_parsed['shortHandedGoals']
+        home_data['short_handed_points'] = home_parsed['shortHandedPoints']
+        home_data['game_winning_goals'] = home_parsed['gameWinningGoals']
+        home_data['blocks'] = home_parsed['blocked']
+        if 'shotPct' in home_parsed:
+            home_data['shot_percent'] = home_parsed['shotPct']
+        else:
+            home_data['shot_percent'] = 0
+        home_data['plus_minus'] = home_parsed['plusMinus']
+        home_data['shifts'] = home_parsed['shifts']
+        home_data['games_played'] = home_parsed['games']
+
+        away_data['goals'] = away_parsed['goals']
+        away_data['assists'] = away_parsed['assists']
+        away_data['points'] = away_parsed['points']
+        away_data['pims'] = away_parsed['penaltyMinutes']
+        away_data['shots'] = away_parsed['shots']
+        away_data['hits'] = away_parsed['hits']
+        away_data['power_play_goals'] = away_parsed['powerPlayGoals']
+        away_data['power_play_points'] = away_parsed['powerPlayPoints']
+        away_data['power_play_toi'] = away_parsed['powerPlayTimeOnIcePerGame']
+        away_data['even_toi'] = away_parsed['evenTimeOnIcePerGame']
+        away_data['short_handed_toi'] = away_parsed['shortHandedTimeOnIcePerGame']
+        away_data['short_handed_goals'] = away_parsed['shortHandedGoals']
+        away_data['short_handed_points'] = away_parsed['shortHandedPoints']
+        away_data['game_winning_goals'] = away_parsed['gameWinningGoals']
+        away_data['blocks'] = away_parsed['blocked']
+        if 'shotPct' in away_parsed:
+            away_data['shot_percent'] = away_parsed['shotPct']
+        else:
+            away_data['shot_percent'] = 0
+        away_data['plus_minus'] = away_parsed['plusMinus']
+        away_data['shifts'] = away_parsed['shifts']
+        away_data['games_played'] = away_parsed['games']
+
+    final_data['home_data'] = home_data
+    final_data['away_data'] = away_data
+    
+
 
 main()
