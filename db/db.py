@@ -64,6 +64,27 @@ def get_all_players_data(teams_player_ids):
             res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=homeAndAway')
             home_away_data = res.json()
 
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=winLoss&season')
+            win_losses_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=byMonth')
+            monthly_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=vsDivision')
+            division_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=vsTeam')
+            team_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats/?stats=gameLog')
+            game_log_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats?stats=goalsByGameSituation')
+            goal_situation_data = res.json()
+
+            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats?stats=onPaceRegularSeason&season')
+            on_pace_data = res.json()
+
             player_data = {}
 
             player_data['info'] = get_player_info(info_data)
@@ -72,6 +93,13 @@ def get_all_players_data(teams_player_ids):
             player_data['minor_leagues_stats'] = get_minor_hockey_stats(stats_data)
             player_data['nhl_stats'] = get_nhl_hockey_stats(stats_data)
             player_data['home_away_splits'] = get_home_away_splits(home_away_data)
+            player_data['win_loss_splits'] = get_win_loss_splits(win_losses_data)
+            player_data['monthly_splits'] = get_monthly_splits(monthly_data)
+            player_data['divisional_splits'] = get_division_splits(division_data)
+            player_data['team_splits'] = get_team_splits(team_data)
+            player_data['game_log_splits'] = get_game_log_splits(game_log_data)
+            player_data['goals_by_game_situation_splits'] = get_goals_by_game_situation(goal_situation_data)
+            player_data['on_pace_for_splits'] = get_on_pace_splits(on_pace_data)
             #player_data['advanced_stats'] = web_scrape_advanced_stats(player_id)
         
 def get_player_info(data):
@@ -134,11 +162,10 @@ def get_minor_hockey_stats(data):
             season_stats['team'] = season['team']['name']
             season_stats['year'] = season['season']
             season_stats['stats'] = {}
-            season_stats['stats']['goals'] = season['stat']['goals']
-            season_stats['stats']['assists'] = season['stat']['assists']
-            season_stats['stats']['points'] = season['stat']['points']
-            if 'games' in season['stat']:
-                season_stats['stats']['games_played'] = season['stat']['games']
+            season_stats['stats']['goals'] = check_stats(season['stat'], 'goals')
+            season_stats['stats']['assists'] = check_stats(season['stat'], 'assists')
+            season_stats['stats']['points'] = check_stats(season['stat'], 'points')
+            season_stats['stats']['games_played'] = check_stats(season['stat'], 'games')
         
             minor_stats.append(season_stats)
 
@@ -185,8 +212,9 @@ def get_nhl_hockey_stats(data):
     return pro_stats
 
 def get_home_away_splits(data):
-    
-    final_data = {}
+    # Returns a list for given players stats when home vs away
+
+    final_data = []
 
     home_data = {}
     away_data = {}
@@ -196,6 +224,7 @@ def get_home_away_splits(data):
         home_parsed = data['stats'][0]['splits'][0]['stat']
         away_parsed = data['stats'][0]['splits'][1]['stat']
 
+        home_data['home_away'] = 'home'
         home_data['goals'] = home_parsed['goals']
         home_data['assists'] = home_parsed['assists']
         home_data['points'] = home_parsed['points']
@@ -211,14 +240,13 @@ def get_home_away_splits(data):
         home_data['short_handed_points'] = home_parsed['shortHandedPoints']
         home_data['game_winning_goals'] = home_parsed['gameWinningGoals']
         home_data['blocks'] = home_parsed['blocked']
-        if 'shotPct' in home_parsed:
-            home_data['shot_percent'] = home_parsed['shotPct']
-        else:
-            home_data['shot_percent'] = 0
+        home_data['shot_percent'] = check_stats(home_parsed, 'shotPct')
         home_data['plus_minus'] = home_parsed['plusMinus']
         home_data['shifts'] = home_parsed['shifts']
         home_data['games_played'] = home_parsed['games']
 
+
+        away_data['home_away'] = 'away'
         away_data['goals'] = away_parsed['goals']
         away_data['assists'] = away_parsed['assists']
         away_data['points'] = away_parsed['points']
@@ -234,17 +262,271 @@ def get_home_away_splits(data):
         away_data['short_handed_points'] = away_parsed['shortHandedPoints']
         away_data['game_winning_goals'] = away_parsed['gameWinningGoals']
         away_data['blocks'] = away_parsed['blocked']
-        if 'shotPct' in away_parsed:
-            away_data['shot_percent'] = away_parsed['shotPct']
-        else:
-            away_data['shot_percent'] = 0
+        away_data['shot_percent'] = check_stats(away_parsed, 'shotPct')
         away_data['plus_minus'] = away_parsed['plusMinus']
         away_data['shifts'] = away_parsed['shifts']
         away_data['games_played'] = away_parsed['games']
 
-    final_data['home_data'] = home_data
-    final_data['away_data'] = away_data
+    final_data.append(home_data)
+    final_data.append(away_data)
+
+    return final_data
     
+def get_win_loss_splits(data):
+    # Returns a list for given players stats in wins vs losses
+
+    final_data = []
+
+    win_data = {}
+    loss_data = {}
+
+    if len(data['stats'][0]['splits']) == 2:
+
+        win_parsed = data['stats'][0]['splits'][0]['stat']
+        loss_parsed = data['stats'][0]['splits'][1]['stat']
+
+        win_data['win_loss'] = 'win'
+        win_data['goals'] = win_parsed['goals']
+        win_data['assists'] = win_parsed['assists']
+        win_data['points'] = win_parsed['points']
+        win_data['pims'] = win_parsed['penaltyMinutes']
+        win_data['shots'] = win_parsed['shots']
+        win_data['hits'] = win_parsed['hits']
+        win_data['power_play_goals'] = win_parsed['powerPlayGoals']
+        win_data['power_play_points'] = win_parsed['powerPlayPoints']
+        win_data['power_play_toi'] = win_parsed['powerPlayTimeOnIcePerGame']
+        win_data['even_toi'] = win_parsed['evenTimeOnIcePerGame']
+        win_data['short_handed_toi'] = win_parsed['shortHandedTimeOnIcePerGame']
+        win_data['short_handed_goals'] = win_parsed['shortHandedGoals']
+        win_data['short_handed_points'] = win_parsed['shortHandedPoints']
+        win_data['game_winning_goals'] = win_parsed['gameWinningGoals']
+        win_data['blocks'] = win_parsed['blocked']
+        win_data['shot_percent'] = check_stats(win_parsed, 'shotPct')
+        win_data['plus_minus'] = win_parsed['plusMinus']
+        win_data['shifts'] = win_parsed['shifts']
+        win_data['games_played'] = win_parsed['games']
+
+        loss_data['win_loss'] = 'loss'
+        loss_data['goals'] = loss_parsed['goals']
+        loss_data['assists'] = loss_parsed['assists']
+        loss_data['points'] = loss_parsed['points']
+        loss_data['pims'] = loss_parsed['penaltyMinutes']
+        loss_data['shots'] = loss_parsed['shots']
+        loss_data['hits'] = loss_parsed['hits']
+        loss_data['power_play_goals'] = loss_parsed['powerPlayGoals']
+        loss_data['power_play_points'] = loss_parsed['powerPlayPoints']
+        loss_data['power_play_toi'] = loss_parsed['powerPlayTimeOnIcePerGame']
+        loss_data['even_toi'] = loss_parsed['evenTimeOnIcePerGame']
+        loss_data['short_handed_toi'] = loss_parsed['shortHandedTimeOnIcePerGame']
+        loss_data['short_handed_goals'] = loss_parsed['shortHandedGoals']
+        loss_data['short_handed_points'] = loss_parsed['shortHandedPoints']
+        loss_data['game_winning_goals'] = loss_parsed['gameWinningGoals']
+        loss_data['blocks'] = loss_parsed['blocked']
+        loss_data['shot_percent'] = check_stats(loss_parsed, 'shotPct')
+        loss_data['plus_minus'] = loss_parsed['plusMinus']
+        loss_data['shifts'] = loss_parsed['shifts']
+        loss_data['games_played'] = loss_parsed['games']
+
+    final_data.append(win_data)
+    final_data.append(loss_data)
+
+    return final_data
+
+def get_monthly_splits(data):
+    # Returns a list of given players stats in each month
+
+    final_data = []
+    for month in data['stats'][0]['splits']:
+        if month:
+            monthly_splits = {}
+            monthly_splits['month'] = month['month']
+            monthly_splits['goals'] = month['stat']['goals']
+            monthly_splits['assists'] = month['stat']['assists']
+            monthly_splits['points'] = month['stat']['points']
+            monthly_splits['pims'] = month['stat']['penaltyMinutes']
+            monthly_splits['shots'] = month['stat']['shots']
+            monthly_splits['hits'] = month['stat']['hits']
+            monthly_splits['power_play_goals'] = month['stat']['powerPlayGoals']
+            monthly_splits['power_play_points'] = month['stat']['powerPlayPoints']
+            monthly_splits['power_play_toi'] = check_stats(month['stat'], 'powerPlayTimeOnIcePerGame')
+            monthly_splits['even_toi'] = month['stat']['evenTimeOnIcePerGame']
+            monthly_splits['short_handed_toi'] = check_stats(month['stat'], 'shortHandedTimeOnIcePerGame')
+            monthly_splits['short_handed_goals'] = month['stat']['shortHandedGoals']
+            monthly_splits['short_handed_points'] = month['stat']['shortHandedPoints']
+            monthly_splits['game_winning_goals'] = month['stat']['gameWinningGoals']
+            monthly_splits['blocks'] = month['stat']['blocked']
+            monthly_splits['shot_percent'] = check_stats(month['stat'], 'shotPct')
+            monthly_splits['plus_minus'] = month['stat']['plusMinus']
+            monthly_splits['shifts'] = month['stat']['shifts']
+            monthly_splits['games_played'] = month['stat']['games']
+
+            final_data.append(monthly_splits)
+
+    return final_data
+
+def get_division_splits(data):
+    # Returns a list of player stats vs each division
+
+    final_data = []
+
+    division_splits_data = data['stats'][0]['splits']
+
+    if len(division_splits_data) > 0:
+        for division in division_splits_data:
+            division_splits = {}
+
+            division_splits['division_name'] = division['opponentDivision']['name']
+            division_splits['division_id'] = division['opponentDivision']['id']
+            division_splits['goals'] = division['stat']['goals']
+            division_splits['assists'] = division['stat']['assists']
+            division_splits['points'] = division['stat']['points']
+            division_splits['pims'] = division['stat']['penaltyMinutes']
+            division_splits['shots'] = division['stat']['shots']
+            division_splits['hits'] = division['stat']['hits']
+            division_splits['power_play_goals'] = division['stat']['powerPlayGoals']
+            division_splits['power_play_points'] = division['stat']['powerPlayPoints']
+            division_splits['power_play_toi'] = division['stat']['powerPlayTimeOnIcePerGame']
+            division_splits['even_toi'] = division['stat']['evenTimeOnIcePerGame']
+            division_splits['short_handed_toi'] = division['stat']['shortHandedTimeOnIcePerGame']
+            division_splits['short_handed_goals'] = division['stat']['shortHandedGoals']
+            division_splits['short_handed_points'] = division['stat']['shortHandedPoints']
+            division_splits['game_winning_goals'] = division['stat']['gameWinningGoals']
+            division_splits['blocks'] = division['stat']['blocked']
+            division_splits['shot_percent'] = check_stats(division['stat'], 'shotPct')
+            division_splits['plus_minus'] = division['stat']['plusMinus']
+            division_splits['shifts'] = division['stat']['shifts']
+            division_splits['games_played'] = division['stat']['games']
+
+            final_data.append(division_splits)
+    
+    return final_data
+
+def get_team_splits(data):
+    # Returns a list of players stats vs specfic teams 
+
+    final_data = []
+
+    for team in data['stats'][0]['splits']:
+        team_data = {}
+        
+        team_data['opponent_name'] = team['opponent']['name']
+        team_data['opponent_id'] = team['opponent']['id']
+        team_data['goals'] = team['stat']['goals']
+        team_data['assists'] = team['stat']['assists']
+        team_data['points'] = team['stat']['points']
+        team_data['pims'] = team['stat']['penaltyMinutes']
+        team_data['shots'] = team['stat']['shots']
+        team_data['hits'] = team['stat']['hits']
+        team_data['power_play_goals'] = team['stat']['powerPlayGoals']
+        team_data['power_play_points'] = team['stat']['powerPlayPoints']
+        team_data['power_play_toi'] = team['stat']['powerPlayTimeOnIcePerGame']
+        team_data['even_toi'] = team['stat']['evenTimeOnIcePerGame']
+        team_data['short_handed_toi'] = team['stat']['shortHandedTimeOnIcePerGame']
+        team_data['short_handed_goals'] = team['stat']['shortHandedGoals']
+        team_data['short_handed_points'] = team['stat']['shortHandedPoints']
+        team_data['game_winning_goals'] = team['stat']['gameWinningGoals']
+        team_data['blocks'] = team['stat']['blocked']
+        team_data['shot_percent'] = check_stats(team['stat'], 'shotPct')
+        team_data['plus_minus'] = team['stat']['plusMinus']
+        team_data['shifts'] = team['stat']['shifts']
+        team_data['games_played'] = team['stat']['games']
+
+        final_data.append(team_data)
+
+    return final_data
+
+def get_game_log_splits(data):
+    # Returns a list of game log for given player
+    final_data = []
+
+    for game in data['stats'][0]['splits']:
+        game_data = {}
+
+        game_data['opponent_name'] = game['opponent']['name']
+        game_data['opponent_id'] = game['opponent']['id']
+        game_data['date'] = game['opponent']['name']
+        game_data['game_id'] = game['game']['gamePk']
+        game_data['win_lose'] = game['isWin']
+        game_data['home_away'] = game['isHome']
+        game_data['overtime'] = game['isOT']
+        game_data['goals'] = game['stat']['goals']
+        game_data['assists'] = game['stat']['assists']
+        game_data['points'] = game['stat']['points']
+        game_data['pims'] = game['stat']['penaltyMinutes']
+        game_data['shots'] = game['stat']['shots']
+        game_data['hits'] = game['stat']['hits']
+        game_data['power_play_goals'] = game['stat']['powerPlayGoals']
+        game_data['power_play_points'] = game['stat']['powerPlayPoints']
+        game_data['power_play_toi'] = game['stat']['powerPlayTimeOnIce']
+        game_data['even_toi'] = game['stat']['evenTimeOnIce']
+        game_data['short_handed_toi'] = game['stat']['shortHandedTimeOnIce']
+        game_data['short_handed_goals'] = game['stat']['shortHandedGoals']
+        game_data['short_handed_points'] = game['stat']['shortHandedPoints']
+        game_data['game_winning_goals'] = game['stat']['gameWinningGoals']
+        game_data['blocks'] = game['stat']['blocked']
+        game_data['shot_percent'] = check_stats(game['stat'], 'shotPct')
+        game_data['plus_minus'] = game['stat']['plusMinus']
+        game_data['shifts'] = game['stat']['shifts']
+        game_data['games_played'] = game['stat']['games']
+
+        final_data.append(game_data)
+
+    return final_data
+
+def get_goals_by_game_situation(data):
+    # Returns a dict with goals by game situations for each player
+    situations = {}
+
+    
+    if len(data['stats'][0]['splits']) > 0:
+        stats = data['stats'][0]['splits'][0]['stat']
+
+        # List of all of the API keys to test
+        check_list = ['goalsInFirstPeriod', 'goalsInSecondPeriod', 'goalsInThirdPeriod', 'goalsInOvertime', 'emptyNetGoals', 'goalsTrailingByOne', 'goalsTrailingByTwo',
+                        'goalsTrailingByThreePlus', 'goalsWhenTied', 'goalsLeadingByOne', 'goalsLeadingByTwo', 'goalsLeadingByThreePlus']
+
+        # Keys to use for my dict
+        dict_key = ['goals_in_first_period', 'goals_in_second_period', 'goals_in_third_period', 'goals_in_overtime', 'empty_net_goals', 'goals_trailing_by_one', 'goals_trailing_by_two',
+                    'goals_trailing_by_three_plus', 'goals_when_tied', 'goals_leading_by_one', 'goals_leading_by_two', 'goals_leading_by_three_plus']
+
+        for index, check  in enumerate(check_list):
+            # Sets the situation dict key = to the api data
+            situations[dict_key[index]] = check_stats(stats, check)
+        
+    return situations
+
+def get_on_pace_splits(data):
+    final = {}
+
+    for on_pace_data in data['stats'][0]['splits']:
+        if on_pace_data:
+
+            final['goals'] = on_pace_data['stat']['goals']
+            final['assists'] = on_pace_data['stat']['assists']
+            final['points'] = on_pace_data['stat']['points']
+            final['pims'] = on_pace_data['stat']['penaltyMinutes']
+            final['shots'] = on_pace_data['stat']['shots']
+            final['hits'] = on_pace_data['stat']['hits']
+            final['power_play_goals'] = on_pace_data['stat']['powerPlayGoals']
+            final['power_play_points'] = on_pace_data['stat']['powerPlayPoints']
+            final['power_play_toi'] = on_pace_data['stat']['powerPlayTimeOnIcePerGame']
+            final['even_toi'] = on_pace_data['stat']['evenTimeOnIcePerGame']
+            final['short_handed_toi'] = check_stats(on_pace_data['stat'], 'shortHandedTimeOnIcePerGame')
+            final['short_handed_goals'] = on_pace_data['stat']['shortHandedGoals']
+            final['short_handed_points'] = on_pace_data['stat']['shortHandedPoints']
+            final['game_winning_goals'] = on_pace_data['stat']['gameWinningGoals']
+            final['blocks'] = on_pace_data['stat']['blocked']
+            final['shot_percent'] = check_stats(on_pace_data['stat'], 'shotPct')
+            final['plus_minus'] = on_pace_data['stat']['plusMinus']
+            final['shifts'] = on_pace_data['stat']['shifts']
+            final['games_played'] = on_pace_data['stat']['games']
+
+def check_stats(stats, name):
+    # helper method to check that the stat eists
+    if name in stats:
+        return stats[name]
+    else:
+        return 0
 
 
 main()
