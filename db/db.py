@@ -1,6 +1,6 @@
 from typing import final
 import requests
-from webscraper import web_scrape_advanced_stats
+#from webscraper import web_scrape_advanced_stats
 
 YEAR = '20212022'
 
@@ -101,6 +101,8 @@ def get_all_players_data(teams_player_ids):
             player_data['goals_by_game_situation_splits'] = get_goals_by_game_situation(goal_situation_data)
             player_data['on_pace_for_splits'] = get_on_pace_splits(on_pace_data)
             #player_data['advanced_stats'] = web_scrape_advanced_stats(player_id)
+
+            print(player_data)
         
 def get_player_info(data):
     # Gets an individual players info
@@ -108,7 +110,9 @@ def get_player_info(data):
 
     player_info = data['people'][0]
 
-    info['dob'] = player_info['birthDate']
+    info['id'] = player_info['id']
+    info['name'] = player_info['fullName']
+    info['date_of_birth'] = player_info['birthDate']
     info['birth_country'] = player_info['birthCountry']
     if 'birthCity' in player_info:
         info['birth_city'] = player_info['birthCity']
@@ -121,7 +125,7 @@ def get_player_info(data):
     info['assistant_captain'] = player_info['alternateCaptain']
     info['rookie'] = player_info['rookie']
     info['shoots_catches'] = player_info['shootsCatches']
-    info['rostered'] = player_info['rosterStatus']
+    info['roster_status'] = player_info['rosterStatus']
     info['number'] = player_info['primaryNumber']
 
     return info
@@ -184,6 +188,7 @@ def get_nhl_hockey_stats(data):
 
             season_stats['league'] = season['league']['name']
             season_stats['team_name'] = season['team']['name']
+            season_stats['team_id'] = season['team']['id']
             season_stats['year'] = season['season']
             season_stats['stats'] = {}
             season_stats['stats']['goals'] = season['stat']['goals']
@@ -193,8 +198,8 @@ def get_nhl_hockey_stats(data):
             season_stats['stats']['shots'] = season['stat']['shots']
             season_stats['stats']['hits'] = season['stat']['hits']
             season_stats['stats']['power_play_goals'] = season['stat']['powerPlayGoals']
-            season_stats['stats']['power_player_points'] = season['stat']['powerPlayPoints']
-            season_stats['stats']['power_player_toi'] = season['stat']['powerPlayTimeOnIce']
+            season_stats['stats']['power_play_points'] = season['stat']['powerPlayPoints']
+            season_stats['stats']['power_play_toi'] = season['stat']['powerPlayTimeOnIce']
             season_stats['stats']['even_toi'] = season['stat']['evenTimeOnIce']
             season_stats['stats']['short_handed_toi'] = season['stat']['shortHandedTimeOnIce']
             season_stats['stats']['short_handed_goals'] = season['stat']['shortHandedGoals']
@@ -520,6 +525,8 @@ def get_on_pace_splits(data):
             final['plus_minus'] = on_pace_data['stat']['plusMinus']
             final['shifts'] = on_pace_data['stat']['shifts']
             final['games_played'] = on_pace_data['stat']['games']
+    
+    return final
 
 def check_stats(stats, name):
     # helper method to check that the stat eists
