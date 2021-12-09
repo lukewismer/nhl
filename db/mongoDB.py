@@ -1,7 +1,8 @@
 from pymongo import MongoClient
+import os
 
 try:
-    conn = MongoClient("mongodb+srv://lukeWismer:Luke4791@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+    conn = MongoClient(f"mongodb+srv://{os.environ.get('mongoDBuser')}:{os.environ.get('mongoDBpwd')}@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
 
     print('Succesfull connection')
 
