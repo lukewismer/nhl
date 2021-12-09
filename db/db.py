@@ -1,14 +1,10 @@
-from typing import final
 import requests
 import time
+from mongoDB import send_data_to_mongo_skaters
 
 def main():
-    t0 = time.time()
     player_ids = get_all_teams_rosters(get_team_ids())
     get_all_players_data(player_ids)
-    t1 = time.time()
-    total_time = t1-t0
-    print(f'Execution time: {total_time}')
 
 def get_team_ids():
     # Gets all team Ids and returns a list
@@ -67,26 +63,19 @@ def get_all_players_data(teams_player_ids):
             info_data = res.json()
 
             stats_data = get_stats_request('yearByYear', player_id)
-
             home_away_data = get_stats_request('homeAndAway', player_id)
-
             win_losses_data = get_stats_request('winLoss', player_id)
-
             monthly_data = get_stats_request('byMonth', player_id)
-
             division_data = get_stats_request('vsDivision', player_id)
-
             team_data = get_stats_request('vsTeam', player_id)
-
             game_log_data = get_stats_request('gameLog', player_id)
-
             goal_situation_data = get_stats_request('goalsByGameSituation', player_id)
-
             on_pace_data = get_stats_request('onPaceRegularSeason&season', player_id)
 
             player_data = {}
 
             # Gets all of our data for each player
+            player_data['_id'] = get_player_info(info_data)['id']
             player_data['info'] = get_player_info(info_data)
             player_data['team'] = get_player_team_info(info_data)
             player_data['position'] = get_player_position(info_data)
@@ -100,6 +89,8 @@ def get_all_players_data(teams_player_ids):
             player_data['game_log_splits'] = get_game_log_splits(game_log_data, api_keys, dict_keys)
             player_data['goals_by_game_situation_splits'] = get_goals_by_game_situation(goal_situation_data)
             player_data['on_pace_for_splits'] = get_on_pace_splits(on_pace_data, api_keys, dict_keys)
+            
+            send_data_to_mongo_skaters(player_data)
         
 def get_player_info(data):
     # Gets an individual players info
