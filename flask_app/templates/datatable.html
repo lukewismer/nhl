@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Age</th>
+        <th>Hand</th>
+        <th>#</th>
+        <th>Team</th>
+        <th>Season</th>
+        <th>GP</th>
+        <th>G</th>
+        <th>A</th>
+        <th>P</th>
+        <th>S</th>
+        <th>H</th>
+        <th>PIM</th>
+        <th>+/-</th>
+        <th>Blocks</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for player in players %}
+        <tr>
+          <td>{{ player.info.name }}</td>
+          <td>{{ player.info.age }}</td>
+          <td>{{ player.info.shoots_catches }}</td>
+          <td>{{ player.info.number }}</td>
+          <td>{{ player.nhl_stats[-1].team_name }}</td>
+          <td>{{ player.nhl_stats[-1].year }}</td>
+          <td>{{ player.nhl_stats[-1].stats.games_played }}</td>
+          <td>{{ player.nhl_stats[-1].stats.goals }}</td>
+          <td>{{ player.nhl_stats[-1].stats.assists }}</td>
+          <td>{{ player.nhl_stats[-1].stats.points }}</td>
+          <td>{{ player.nhl_stats[-1].stats.shots }}</td>
+          <td>{{ player.nhl_stats[-1].stats.hits }}</td>
+          <td>{{ player.nhl_stats[-1].stats.pims }}</td>
+          <td>{{ player.nhl_stats[-1].stats.plus_minus }}</td>
+          <td>{{ player.nhl_stats[-1].stats.blocks }}</td>
+          
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({ 
+      });
+    });
+  </script>
+{% endblock %}
