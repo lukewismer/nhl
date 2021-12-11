@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Bio -->
+<div class="card mb-3" style="max-width: 540px; margin:auto">
+<div class="row g-0">
+    <div class="col-md-4">
+    <img src="http://nhl.bamcontent.com/images/headshots/current/168x168/{{player_id}}.jpg" class="img-fluid rounded-start" alt="...">
+    </div>
+    <div class="col-md-8">
+    <div class="card-body">
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">Height: {{player_info.height}}  ||  Weight: {{player_info.weight}} lbs</li>
+            <li class="list-group-item">DOB: {{player_info.date_of_birth}}  ||  Age: {{player_info.age}}</li>
+            <li class="list-group-item">Nation: {{player_info.nationality}}  ||  City: {{player_info.birth_city}}</li> 
+            <li class="list-group-item">Hand: {{player_info.shoots_catches}}  ||  Number: {{player_info.number}}</li>
+            </ul>
+    </div>
+    </div>
+</div>
+</div>
+
+<!-- Table Filtering-->
+<div id='filter-stats'>
+    <a class="btn btn-primary" href="?filter=nhl_stats" role="button">NHL Stats</a>
+    <a class="btn btn-primary" href="?filter=minor_leagues_stats" role="button">Minor League Stats</a>
+    <div class="dropdown" id="filter-stats-dropdown">
+        <a class="btn btn-primary dropdown-toggle" href="nhl_stats" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          Current NHL Splits
+        </a>
+      
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li><a class="dropdown-item" href="?filter=home_away_splits">Home/Away</a></li>
+          <li><a class="dropdown-item" href="?filter=win_loss_splits">Win/Loss</a></li>
+          <li><a class="dropdown-item" href="?filter=monthly_splits">Monthly</a></li>
+          <li><a class="dropdown-item" href="?filter=divisional_splits">Divisonal</a></li>
+          <li><a class="dropdown-item" href="?filter=team_splits">Opponent</a></li>
+        </ul>
+      </div>
+    
+</div>
+
+<!-- TABLE -->
+<div>
+    <h4 id="filter-title">{{filter_title}}</h4>
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        {% if filter == 'nhl_stats' or filter == 'minor_leagues_stats'%}
+        <th>Team</th>
+        {% if filter == 'minor_leagues_stats' %}
+        <th>League</th>
+        {% endif %}
+        <th>Season</th>
+        {% else %}
+        <th>Filter</th>
+        {% endif %}
+        <th>GP</th>
+        <th>G</th>
+        <th>A</th>
+        <th>P</th>
+        {% if filter != 'minor_leagues_stats' %}
+        <th>S</th>
+        <th>H</th>
+        <th>PIM</th>
+        <th>+/-</th>
+        <th>Blocks</th>
+        {% endif %}
+      </tr>
+    </thead>
+    <tbody>
+        {% for stat in player %}
+        <tr>
+            {% if filter == 'nhl_stats' or filter == 'minor_leagues_stats'%}
+          <td>{{ stat.team_name }}</td>
+            {% if filter == 'minor_leagues_stats' %}
+            <td>{{ stat.league }}</td>
+            {% endif %}
+          <td>{{ stat.year }}</td>
+            {% else %}
+            <td>{{stat.filter}}</td>
+            {% endif %}
+          <td>{{ stat.stats.games_played }}</td>
+          <td>{{ stat.stats.goals }}</td>
+          <td>{{ stat.stats.assists }}</td>
+          <td>{{ stat.stats.points }}</td>
+          {% if filter != 'minor_leagues_stats' %}
+          <td>{{ stat.stats.shots }}</td>
+          <td>{{ stat.stats.hits }}</td>
+          <td>{{ stat.stats.pims }}</td>
+          <td>{{ stat.stats.plus_minus }}</td>
+          <td>{{ stat.stats.blocks }}</td>
+          {% endif %}
+          
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({ 
+      });
+    });
+  </script>
+{% endblock %}

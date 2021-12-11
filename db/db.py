@@ -151,7 +151,7 @@ def get_minor_hockey_stats(data):
             season_stats = {}
             season_stats['stats'] = {}
             season_stats['league'] = season['league']['name']
-            season_stats['team'] = season['team']['name']
+            season_stats['team_name'] = season['team']['name']
             season_stats['year'] = season['season']
             season_stats['stats'] = {}
             season_stats['stats']['goals'] = check_stats(season['stat'], 'goals')
@@ -205,10 +205,14 @@ def get_home_away_splits(data, api_keys, dict_keys):
 
         for split in data['stats'][0]['splits']:
             temp_data = {}
-            temp_data['is_home'] = split['isHome']
+            temp_data['stats'] = {}
+            if split['isHome'] == True:
+                temp_data['filter'] = 'Home'
+            else:
+                temp_data['filter'] = 'Away'
 
             for index, item in enumerate(api_keys):
-                temp_data[dict_keys[index]] = check_stats(split['stat'], item)
+                temp_data['stats'][dict_keys[index]] = check_stats(split['stat'], item)
     
             final_data.append(temp_data)
 
@@ -222,10 +226,19 @@ def get_win_loss_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0: 
         for split in data['stats'][0]['splits']:
             temp_data = {}
-            temp_data['is_win'] = split['isWin']
+            temp_data['stats'] = {}
+            # Check for each scenario
+            if split['isWin'] == True and split['isOT'] == False:
+                temp_data['filter'] = 'W'
+            elif split['isWin'] == True and split['isOT'] == True:
+                temp_data['filter'] = 'OTW'
+            elif split['isWin'] == False and split['isOT'] == False:
+                temp_data['filter'] = 'L'
+            elif split['isWin'] == False and split['isOT'] == True:
+                temp_data['filter'] = 'OTL'
 
             for index, item in enumerate(api_keys):
-                temp_data[dict_keys[index]] = check_stats(split['stat'], item)
+                temp_data['stats'][dict_keys[index]] = check_stats(split['stat'], item)
     
             final_data.append(temp_data)
 
@@ -239,10 +252,12 @@ def get_monthly_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0:
         for month in data['stats'][0]['splits']:
             month_data = {}
+            month_data['stats'] = {}
+            month_data['filter'] = month['month']
             for index, item in enumerate(api_keys):
-                month_data[dict_keys[index]] = check_stats(month['stat'], item)
+                month_data['stats'][dict_keys[index]] = check_stats(month['stat'], item)
         
-        final_data.append(month_data)
+            final_data.append(month_data)
 
     return final_data
 
@@ -254,12 +269,13 @@ def get_division_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0:
         for division in data['stats'][0]['splits']:
             division_splits = {}
-            division_splits['division_name'] = division['opponentDivision']['name']
+            division_splits['stats'] = {}
+            division_splits['filter'] = division['opponentDivision']['name']
             division_splits['division_id'] = division['opponentDivision']['id']
             for index, item in enumerate(api_keys):
-                division_splits[dict_keys[index]] = check_stats(division['stat'], item)
+                division_splits['stats'][dict_keys[index]] = check_stats(division['stat'], item)
         
-        final_data.append(division_splits)
+            final_data.append(division_splits)
 
     return final_data
 
@@ -271,12 +287,13 @@ def get_team_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0:
         for team in data['stats'][0]['splits']:
             team_data = {}
-            team_data['division_name'] = team['opponent']['name']
-            team_data['division_id'] = team['opponent']['id']
+            team_data['stats'] = {}
+            team_data['filter'] = team['opponent']['name']
+            team_data['team_id'] = team['opponent']['id']
             for index, item in enumerate(api_keys):
-                team_data[dict_keys[index]] = check_stats(team['stat'], item)
+                team_data['stats'][dict_keys[index]] = check_stats(team['stat'], item)
         
-        final_data.append(team_data)
+            final_data.append(team_data)
 
     return final_data
 
@@ -288,12 +305,13 @@ def get_game_log_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0:
         for game in data['stats'][0]['splits']:
             game_data = {}
-            game_data['division_name'] = game['opponent']['name']
-            game_data['division_id'] = game['opponent']['id']
+            game_data['stats'] = {}
+            game_data['filter'] = game['opponent']['name']
+            game_data['opponent_id'] = game['opponent']['id']
             for index, item in enumerate(api_keys):
-                game_data[dict_keys[index]] = check_stats(game['stat'], item)
+                game_data['stats'][dict_keys[index]] = check_stats(game['stat'], item)
         
-        final_data.append(game_data)
+            final_data.append(game_data)
 
     return final_data
 
@@ -326,8 +344,9 @@ def get_on_pace_splits(data, api_keys, dict_keys):
     if len(data['stats'][0]['splits']) > 0:
         for pace in data['stats'][0]['splits']:
             pace_data = {}
+            pace_data['stats'] = {}
             for index, item in enumerate(api_keys):
-                pace_data[dict_keys[index]] = check_stats(pace['stat'], item)
+                pace_data['stats'][dict_keys[index]] = check_stats(pace['stat'], item)
         
         final_data.append(pace_data)
         

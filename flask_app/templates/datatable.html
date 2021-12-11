@@ -24,7 +24,7 @@
     <tbody>
         {% for player in players %}
         <tr>
-          <td>{{ player.info.name }}</td>
+          <td><a href='/individual/{{player.info.id}}?filter=nhl_stats'>{{ player.info.name }}</a></td>
           <td>{{ player.info.age }}</td>
           <td>{{ player.info.shoots_catches }}</td>
           <td>{{ player.info.number }}</td>

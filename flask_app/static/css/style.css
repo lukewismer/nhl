@@ -1,10 +1,19 @@
-h1 {
-    border: 2px #eee solid;
-    color: brown;
+#main-title {
     text-align: center;
-    padding: 10px;
+    color: brown;
+    padding: 20px;
 }
 
-title {
+#filter-stats {
+    padding: 30px;
+}
+
+#filter-stats-dropdown {
+    padding-top: 20px;
+}
+
+#filter-title {
+    padding: 5px;
     color: blue;
+    text-align: center;
 }
