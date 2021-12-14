@@ -307,6 +307,7 @@ def get_game_log_splits(data, api_keys, dict_keys):
             game_data = {}
             game_data['stats'] = {}
             game_data['filter'] = game['opponent']['name']
+            game_data['date'] = game['date']
             game_data['opponent_id'] = game['opponent']['id']
             for index, item in enumerate(api_keys):
                 game_data['stats'][dict_keys[index]] = check_stats(game['stat'], item)

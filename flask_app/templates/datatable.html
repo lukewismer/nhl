@@ -19,6 +19,13 @@
         <th>PIM</th>
         <th>+/-</th>
         <th>Blocks</th>
+        <th>S%</th>
+        <th>PPG</th>
+        <th>PPP</th>
+        <th>SHG</th>
+        <th>SHP</th>
+        <th>Shifts</th>
+
       </tr>
     </thead>
     <tbody>
@@ -29,7 +36,7 @@
           <td>{{ player.info.shoots_catches }}</td>
           <td>{{ player.info.number }}</td>
           <td>{{ player.nhl_stats[-1].team_name }}</td>
-          <td>{{ player.nhl_stats[-1].year }}</td>
+          <td>{{ player.nhl_stats[-1].year[:4] + '-' + player.nhl_stats[-1].year[4:] }}</td>
           <td>{{ player.nhl_stats[-1].stats.games_played }}</td>
           <td>{{ player.nhl_stats[-1].stats.goals }}</td>
           <td>{{ player.nhl_stats[-1].stats.assists }}</td>
@@ -39,7 +46,13 @@
           <td>{{ player.nhl_stats[-1].stats.pims }}</td>
           <td>{{ player.nhl_stats[-1].stats.plus_minus }}</td>
           <td>{{ player.nhl_stats[-1].stats.blocks }}</td>
-          
+          <td>{{ player.nhl_stats[-1].stats.shot_percent }}</td>
+          <td>{{ player.nhl_stats[-1].stats.power_play_goals }}</td>
+          <td>{{ player.nhl_stats[-1].stats.power_play_points }}</td>
+          <td>{{ player.nhl_stats[-1].stats.short_handed_goals }}</td>
+          <td>{{ player.nhl_stats[-1].stats.short_handed_points }}</td>
+          <td>{{ player.nhl_stats[-1].stats.shifts }}</td>
+
         </tr>
       {% endfor %}
     </tbody>

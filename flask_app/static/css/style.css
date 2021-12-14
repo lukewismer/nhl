@@ -17,3 +17,52 @@
     color: blue;
     text-align: center;
 }
+
+#line-chart {
+    padding: 20px;
+}
+
+#stats-graph {
+    padding: 20px; 
+    text-align: center; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+hr.rounded-thick {
+    border-top: 11px solid #bbb;
+    border-radius: 5px;
+}
+
+hr.rounded-thin {
+    border-top: 6px solid #bbb;
+    border-radius: 5px;
+}
+
+#section-seperator {
+    text-align: center;
+}
+
+ul.list-group-columns {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+}
+
+#leader-cell {
+    border: solid 1px #bbb;
+    padding: 2px;
+}
+
+ul {
+    display: block;
+    list-style-type: none;
+}
+
+li {
+    display: inline-block;
+}
+
+li a {
+    display: block;
+}

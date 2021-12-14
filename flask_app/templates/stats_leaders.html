@@ -1,0 +1,22 @@
+{% extends "base.html"%}
+
+{% block content%}
+<div class="row">
+  {% for stat in leaders%}
+  <div class="card col-md-4" style="width: 18rem; padding: 20px">
+    <div class="card-header">
+      {{stat.title}}
+    </div>
+    <ul class="list-group list-group-flush list-group-columns">
+      {% for player in stat.leaders %}
+      <div id="leader-cell">
+      <a href='/individual/{{player._id}}?filter=nhl_stats'>{{player.name}}</a>
+      <li class="list-group-item">{{player.stats}}</li>
+      </div>
+      {%endfor%}
+      <li><a href="/skaters">See More</a></li>
+    </ul>
+  </div>
+  {%endfor%}
+</div>
+{% endblock %}

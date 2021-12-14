@@ -4,23 +4,23 @@
 
 <!-- Bio -->
 <div class="card mb-3" style="max-width: 540px; margin:auto">
-<div class="row g-0">
-    <div class="col-md-4">
-    <img src="http://nhl.bamcontent.com/images/headshots/current/168x168/{{player_id}}.jpg" class="img-fluid rounded-start" alt="...">
-    </div>
-    <div class="col-md-8">
-    <div class="card-body">
-        <ul class="list-group list-group-flush">
-            <li class="list-group-item">Height: {{player_info.height}}  ||  Weight: {{player_info.weight}} lbs</li>
-            <li class="list-group-item">DOB: {{player_info.date_of_birth}}  ||  Age: {{player_info.age}}</li>
-            <li class="list-group-item">Nation: {{player_info.nationality}}  ||  City: {{player_info.birth_city}}</li> 
-            <li class="list-group-item">Hand: {{player_info.shoots_catches}}  ||  Number: {{player_info.number}}</li>
-            </ul>
-    </div>
-    </div>
+  <div class="row g-0">
+      <div class="col-md-4">
+      <img src="http://nhl.bamcontent.com/images/headshots/current/168x168/{{player_id}}.jpg" class="img-fluid rounded-start" alt="...">
+      </div>
+      <div class="col-md-8">
+      <div class="card-body">
+          <ul class="list-group list-group-flush">
+              <li class="list-group-item">Height: {{player_info.height}}  ||  Weight: {{player_info.weight}} lbs</li>
+              <li class="list-group-item">DOB: {{player_info.date_of_birth}}  ||  Age: {{player_info.age}}</li>
+              <li class="list-group-item">Nation: {{player_info.nationality}}  ||  City: {{player_info.birth_city}}</li> 
+              <li class="list-group-item">Hand: {{player_info.shoots_catches}}  ||  Number: {{player_info.number}}</li>
+              </ul>
+      </div>
+      </div>
+  </div>
 </div>
-</div>
-
+<hr class="rounded-thin">
 <!-- Table Filtering-->
 <div id='filter-stats'>
     <a class="btn btn-primary" href="?filter=nhl_stats" role="button">NHL Stats</a>
@@ -66,6 +66,12 @@
         <th>PIM</th>
         <th>+/-</th>
         <th>Blocks</th>
+        <th>S%</th>
+        <th>PPG</th>
+        <th>PPP</th>
+        <th>SHG</th>
+        <th>SHP</th>
+        <th>Shifts</th>
         {% endif %}
       </tr>
     </thead>
@@ -77,7 +83,7 @@
             {% if filter == 'minor_leagues_stats' %}
             <td>{{ stat.league }}</td>
             {% endif %}
-          <td>{{ stat.year }}</td>
+          <td>{{ stat.year[:4] + '-' + stat.year[4:] }}</td>
             {% else %}
             <td>{{stat.filter}}</td>
             {% endif %}
@@ -91,6 +97,12 @@
           <td>{{ stat.stats.pims }}</td>
           <td>{{ stat.stats.plus_minus }}</td>
           <td>{{ stat.stats.blocks }}</td>
+          <td>{{ stat.stats.shot_percent }}</td>
+          <td>{{ stat.stats.power_play_goals }}</td>
+          <td>{{ stat.stats.power_play_points }}</td>
+          <td>{{ stat.stats.short_handed_goals }}</td>
+          <td>{{ stat.stats.short_handed_points }}</td>
+          <td>{{ stat.stats.shifts }}</td>
           {% endif %}
           
         </tr>
@@ -98,6 +110,36 @@
     </tbody>
   </table>
 </div>
+
+<div id="section-seperator">
+  <hr class="rounded-thick">
+  <h4> NHL Graphs </h4>
+  <hr class="rounded-thick">
+</div>
+
+<!-- Graphs -->
+<div>
+  <div id='stats-graph'>
+    <h4>Per Game Stats</h4>
+    <canvas id="per-game-line-chart" width="900" height="400"></canvas>
+  </div>
+  <hr class="rounded-thin">
+  <div id='stats-graph'>
+    <h4>Full Stats</h4>
+    <canvas id="full-stats-line-chart" width="900" height="400"></canvas>
+  </div>
+  <hr class="rounded-thin">
+  <div id='stats-graph'>
+    <h4>Points Game Log</h4>
+    <canvas id="game-log-chart" width="900" height="400"></canvas>
+  </div>
+  <hr class="rounded-thin">
+  <div id='stats-graph'>
+    <h4>Points vs Each Team</h4>
+    <canvas id="team-chart" width="900" height="400"></canvas>
+  </div>
+</div>
+
 {% endblock %}
 
 
@@ -108,4 +150,184 @@
       });
     });
   </script>
+
+<!-- LINE GRAPHS -->
+  <script>
+    var ctx = document.getElementById("per-game-line-chart").getContext("2d");
+    var lineChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: {{ labels | safe }},
+        datasets: [{
+          label: "Points Per Game",
+          data: {{ ppg_values | safe }},
+          fill: false,
+          borderColor: "rgb(0, 204, 0)",
+          lineTension: 0.1
+          },
+          {
+            label: "Goals Per Game",
+            data: {{ gpg_values | safe }},
+            fill: false,
+            borderColor: "rgb(204,0,0)",
+            lineTension: 0.1
+          },
+          {
+            label: "Assists Per Game",
+            data: {{ apg_values | safe}},
+            fill: false,
+            borderColor: "rgb(0,0,204)",
+            lineTension: 0.1
+          },
+          {
+            label: "Shots Per Game",
+            data: {{ spg_values | safe}},
+            fill: false,
+            borderColor: "rgb(240,240,0)",
+            lineTension: 0.1
+          },
+          {
+            label: "Hits Per Game",
+            data: {{ hpg_values | safe}},
+            fill: false,
+            borderColor: "rgb(245,155,0)",
+            lineTension: 0.1
+          },
+          {
+            label: "PP Points Per Game",
+            data: {{ pp_pg_values | safe}},
+            fill: false,
+            borderColor: "rgb(128,0,128)",
+            lineTension: 0.1
+          }
+        ]
+      },
+      options: {
+        responsive: false
+      }
+    });
+
+  </script>
+
+<script>
+  var ctx = document.getElementById("full-stats-line-chart").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ labels | safe }},
+      datasets: [{
+        label: "Points",
+        data: {{ p_values | safe }},
+        fill: false,
+        borderColor: "rgb(0, 204, 0)",
+        lineTension: 0.1
+        },
+        {
+          label: "Goals",
+          data: {{ g_values | safe }},
+          fill: false,
+          borderColor: "rgb(204,0,0)",
+          lineTension: 0.1
+        },
+        {
+          label: "Assists",
+          data: {{ a_values | safe}},
+          fill: false,
+          borderColor: "rgb(0,0,204)",
+          lineTension: 0.1
+        },
+        {
+          label: "Shots",
+          data: {{ s_values | safe}},
+          fill: false,
+          borderColor: "rgb(240,240,0)",
+          lineTension: 0.1
+        },
+        {
+          label: "Hits",
+          data: {{ h_values | safe}},
+          fill: false,
+          borderColor: "rgb(245,155,0)",
+          lineTension: 0.1
+        },
+        {
+          label: "PP Points",
+          data: {{ pp_values | safe}},
+          fill: false,
+          borderColor: "rgb(128,0,128)",
+          lineTension: 0.1
+        }
+      ]
+    },
+    options: {
+      responsive: false
+    }
+  });
+
+</script>
+
+<!-- BAR CHART-->
+<script>
+  var ctx = document.getElementById("game-log-chart").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: {{ gl_labels | safe }},
+      datasets: [{
+        label: "Points",
+        data: {{ gl_p_values | safe }},
+        
+        }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+</script>
+
+<script>
+  var ctx = document.getElementById("team-chart").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: {{ t_labels | safe }},
+      datasets: [{
+        label: "Points",
+        data: {{ t_p_values | safe }},
+        hoverOffset: 4,
+        backgroundColor: [
+          'rgb(206,17,38)',
+          'rgb(0,56,168)', 
+          'rgb(250,70,22)',
+          'rgb(255,184,28)', 
+          'rgb(207,10,44)',
+          'rgb(166,25,46)',
+          'rgb(200,16,46)',  
+          'rgb(204,0,0)', 
+          'rgb(200,16,46)', 
+          'rgb(0,40,104)',
+          'rgb(207,10,44)',  
+          'rgb(206,17,38)', 
+          'rgb(200,16,46)', 
+          'rgb(111,38,61)', 
+          'rgb(252,76,2)', 
+          'rgb(162,170,173)',
+          'rgb(0,109,117)',  
+          'rgb(0,38,84)',
+          'rgb(140,38,51)',  
+          'rgb(53,84,100)'
+        ]
+        }],
+     
+      }
+  });
+
+</script>
+
 {% endblock %}
