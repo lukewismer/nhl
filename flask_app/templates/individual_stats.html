@@ -125,19 +125,26 @@
   </div>
   <hr class="rounded-thin">
   <div id='stats-graph'>
-    <h4>Full Stats</h4>
-    <canvas id="full-stats-line-chart" width="900" height="400"></canvas>
+    <h4>Points Game Log</h4>
+    <canvas id="game-log-chart" width="900" height="400"></canvas>
   </div>
   <hr class="rounded-thin">
   <div id='stats-graph'>
-    <h4>Points Game Log</h4>
-    <canvas id="game-log-chart" width="900" height="400"></canvas>
+    <h4>Goals Per Situation</h4>
+    <canvas id="game-situation-chart" width="900" height="400"></canvas>
   </div>
   <hr class="rounded-thin">
   <div id='stats-graph'>
     <h4>Points vs Each Team</h4>
     <canvas id="team-chart" width="900" height="400"></canvas>
   </div>
+
+  <hr class="rounded-thin">
+  <div id='stats-graph'>
+    <h4>Current Pace vs Career Average</h4>
+    <canvas id="on-pace-radar" width="900" height="400"></canvas>
+  </div>
+  <hr class="rounded-thin">
 </div>
 
 {% endblock %}
@@ -209,62 +216,6 @@
 
   </script>
 
-<script>
-  var ctx = document.getElementById("full-stats-line-chart").getContext("2d");
-  var lineChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: {{ labels | safe }},
-      datasets: [{
-        label: "Points",
-        data: {{ p_values | safe }},
-        fill: false,
-        borderColor: "rgb(0, 204, 0)",
-        lineTension: 0.1
-        },
-        {
-          label: "Goals",
-          data: {{ g_values | safe }},
-          fill: false,
-          borderColor: "rgb(204,0,0)",
-          lineTension: 0.1
-        },
-        {
-          label: "Assists",
-          data: {{ a_values | safe}},
-          fill: false,
-          borderColor: "rgb(0,0,204)",
-          lineTension: 0.1
-        },
-        {
-          label: "Shots",
-          data: {{ s_values | safe}},
-          fill: false,
-          borderColor: "rgb(240,240,0)",
-          lineTension: 0.1
-        },
-        {
-          label: "Hits",
-          data: {{ h_values | safe}},
-          fill: false,
-          borderColor: "rgb(245,155,0)",
-          lineTension: 0.1
-        },
-        {
-          label: "PP Points",
-          data: {{ pp_values | safe}},
-          fill: false,
-          borderColor: "rgb(128,0,128)",
-          lineTension: 0.1
-        }
-      ]
-    },
-    options: {
-      responsive: false
-    }
-  });
-
-</script>
 
 <!-- BAR CHART-->
 <script>
@@ -291,6 +242,32 @@
 
 </script>
 
+<!-- BAR CHART-->
+<script>
+  var ctx = document.getElementById("game-situation-chart").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: {{ gs_labels | safe }},
+      datasets: [{
+        label: "Goals",
+        data: {{ gs_g_values | safe }},
+        
+        }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+</script>
+
+<!-- PIE CHART -->
 <script>
   var ctx = document.getElementById("team-chart").getContext("2d");
   var lineChart = new Chart(ctx, {
@@ -326,6 +303,48 @@
         }],
      
       }
+  });
+
+</script>
+
+<!-- AREA CHART -->
+<script>
+  var ctx = document.getElementById("on-pace-radar").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: {{ op_labels | safe }},
+      datasets: [{
+        label: 'Current Season Pace',
+        data: {{ op_values | safe}},
+        fill: true,
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgb(255, 99, 132)',
+        pointBackgroundColor: 'rgb(255, 99, 132)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(255, 99, 132)'
+      },
+      {
+        label: 'Career Average',
+        data: {{ ca_values | safe}},
+        fill: true,
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgb(54, 162, 235)',
+        pointBackgroundColor: 'rgb(54, 162, 235)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgb(54, 162, 235)'
+      }],
+    },
+    options: {
+      elements: {
+        line: {
+          borderWidth: 3,
+          responsive: true,
+        }
+      }
+    }
   });
 
 </script>

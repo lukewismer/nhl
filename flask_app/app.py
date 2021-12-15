@@ -3,6 +3,7 @@ from flask import Flask, render_template, request
 from pymongo import MongoClient
 import os
 from collections import deque
+import math
 
 app = Flask(__name__, static_folder='static')
 
@@ -50,8 +51,8 @@ def individual_skater(player_id):
         player = p
     
     labels,ppg,apg,gpg,spg,hpg,pp_pg = [], [], [], [], [], [], []
-
     
+    data_keys = ['goals', 'assists', 'points', 'pims', 'power_play_points', 'plus_minus']
     for szn in player['nhl_stats']:
         labels.append(szn['year'])
         ppg.append(round(szn['stats']['points']/szn['stats']['games_played'],2))
@@ -61,17 +62,22 @@ def individual_skater(player_id):
         hpg.append(round(szn['stats']['hits']/szn['stats']['games_played'],2))
         pp_pg.append(round(szn['stats']['power_play_points']/szn['stats']['games_played'],2))
 
-    p, a, g, s, h, pp = [], [], [], [], [], []
+
+    tg,ta,tp,tpim,tppp,tpm,szn_num = 0,0,0,0,0,0,0
     for szn in player['nhl_stats']:
-        p.append(szn['stats']['points'])
-        g.append(szn['stats']['goals'])
-        a.append(szn['stats']['assists'])
-        s.append(szn['stats']['shots'])
-        h.append(szn['stats']['hits'])
-        pp.append(szn['stats']['power_play_points'])
+        if szn['year'] != '20212022':
+            szn_num += 1
+            tg += szn['stats']['goals']
+            ta += szn['stats']['assists']
+            tp += szn['stats']['points']
+            tpim += int(szn['stats']['pims'])
+            tppp += szn['stats']['power_play_points']
+            tpm += szn['stats']['plus_minus']
 
+    ca_values = [tg/szn_num, ta/szn_num, tp/szn_num, tpim/szn_num, tppp/szn_num, tpm/szn_num]
 
-    gl_labels,gl_p_values = [], []
+    print(ca_values)
+    gl_labels, gl_p_values = [], []
     for szn in player['game_log_splits']:
         gl_labels = deque(gl_labels)
         gl_p_values = deque(gl_p_values)
@@ -88,10 +94,24 @@ def individual_skater(player_id):
         t_labels.append(szn['filter'])
         t_p_values.append(szn['stats']['points'])
 
+    gs_labels, gs_g_values = [], []
+    for count, (key, value) in enumerate(player['goals_by_game_situation_splits'].items()):
+        gs_labels.append(key.replace("_", " "))
+        gs_g_values.append(value)
+
+    
+    op_labels, op_values = [], []
+    
+    for count, (key, value) in enumerate(player['on_pace_for_splits'][0]['stats'].items()):
+        if key in data_keys:
+            op_labels.append(key.replace("_", " "))
+            op_values.append(int(value))
+
+
     return render_template('individual_stats.html', player=player_stats, title=player['info']['name'], filter=stat_filter, 
                             filter_title=filter_title, player_id=player_id, player_info=player['info'],  ppg_values=ppg, gpg_values=gpg, apg_values=apg, spg_values=spg, hpg_values=hpg, 
-                            pp_pg_values=pp_pg, labels=labels, gl_labels=gl_labels, gl_p_values=gl_p_values, t_labels=t_labels, t_p_values=t_p_values, p_values=p, g_values=g,
-                            a_values=a, s_values=s, h_values=h, pp_values=pp)
+                            pp_pg_values=pp_pg, labels=labels, t_labels=t_labels, t_p_values=t_p_values, gl_labels=gl_labels, gl_p_values=gl_p_values, gs_g_values=gs_g_values, gs_labels=gs_labels,
+                            op_labels=op_labels, op_values=op_values, ca_values=ca_values)
 
 
 
