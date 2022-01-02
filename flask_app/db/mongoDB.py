@@ -53,6 +53,9 @@ def update_mongo_games(game_id, game_data, collection_games):
         else:
             # If the game is not in the db, insert it
             collection_games.insert_one(game_data)
+    else:
+        # If the game is not in the db, insert it
+        collection_games.insert_one(game_data)
 
 def update_mongo_live_games(game_id, game_data, collection_games):
     # Updates one live game at a time
@@ -62,4 +65,5 @@ def update_mongo_live_games(game_id, game_data, collection_games):
 
     for count, (key,value) in enumerate(keys.items()):
         # Updates the game with new data
-        collection_games.update_one({"_id": game_id}, {"$set": {key: value}})        
+        collection_games.update_one({"_id": game_id}, {"$set": {key: value}})
+                
