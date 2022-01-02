@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Table Filtering-->
+<div id='filter-stats'>
+    <a class="btn btn-primary" href="?filter=nhl" role="button">All Teams</a>
+    <div class="dropdown" id="filter-stats-dropdown">
+        <a class="btn btn-primary dropdown-toggle" href="nhl_stats" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          Division
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li><a class="dropdown-item" href="?filter=pacific">Pacific</a></li>
+          <li><a class="dropdown-item" href="?filter=atlantic">Atlantic</a></li>
+          <li><a class="dropdown-item" href="?filter=central">Central</a></li>
+          <li><a class="dropdown-item" href="?filter=metropolitan">Metropolitan</a></li>
+        </ul>
+    </div>
+    <div class="dropdown" id="filter-stats-dropdown">
+        <a class="btn btn-primary dropdown-toggle" href="nhl_stats" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          Conference
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li><a class="dropdown-item" href="?filter=western">Western</a></li>
+          <li><a class="dropdown-item" href="?filter=eastern">Eastern</a></li>
+        </ul>
+    </div>
+</div>
+
+<div>
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Conference</th>
+        <th>Division</th>
+        <th>W Score First</th>
+        <th>W Score Last</th>
+        <th>W Lead 1st Per</th>
+        <th>W Lead 2nd Per</th>
+        <th>W Outshoot Opp</th>
+        <th>W Outshot By Opp</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for team in teams %}
+        <tr>
+          <td><a href='/team/{{team._id}}'>{{ team.info.name }}</a></td>
+          <td>{{ team.info.conference.name }}</td>
+          <td>{{ team.info.division.name }}</td>
+          <td>{{ team.stats.win_percents.win_score_first|round(3) }}</td>
+          <td>{{ team.stats.win_percents.win_score_last|round(3) }}</td>
+          <td>{{ team.stats.win_percents.win_lead_first_period|round(3) }}</td>
+          <td>{{ team.stats.win_percents.win_lead_second_period|round(3) }}</td>
+          <td>{{ team.stats.win_percents.win_outshoot_opponent|round(3) }}</td>
+          <td>{{ team.stats.win_percents.win_outshot_by_opponent|round(3) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({ 
+      });
+    });
+  </script>
+{% endblock %}

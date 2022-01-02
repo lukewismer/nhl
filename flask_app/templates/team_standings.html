@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Table Filtering-->
+<div id='filter-stats'>
+    <a class="btn btn-primary" href="?filter=nhl" role="button">All Teams</a>
+    <div class="dropdown" id="filter-stats-dropdown">
+        <a class="btn btn-primary dropdown-toggle" href="nhl_stats" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          Division
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li><a class="dropdown-item" href="?filter=pacific">Pacific</a></li>
+          <li><a class="dropdown-item" href="?filter=atlantic">Atlantic</a></li>
+          <li><a class="dropdown-item" href="?filter=central">Central</a></li>
+          <li><a class="dropdown-item" href="?filter=metropolitan">Metropolitan</a></li>
+        </ul>
+    </div>
+    <div class="dropdown" id="filter-stats-dropdown">
+        <a class="btn btn-primary dropdown-toggle" href="nhl_stats" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+          Conference
+        </a>
+        <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
+          <li><a class="dropdown-item" href="?filter=western">Western</a></li>
+          <li><a class="dropdown-item" href="?filter=eastern">Eastern</a></li>
+        </ul>
+    </div>
+</div>
+<div>
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Conference</th>
+        <th>Division</th>
+        <th>GP</th>
+        <th>W</th>
+        <th>L</th>
+        <th>OTL</th>
+        <th>Points</th>
+        <th>Points %</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for team in teams %}
+        <tr>
+          <td><a href='/team/{{team._id}}'>{{ team.info.name }}</a></td>
+          <td>{{ team.info.conference.name }}</td>
+          <td>{{ team.info.division.name }}</td>
+          <td>{{ team.stats.games_played }}</td>
+          <td>{{ team.stats.wins }}</td>
+          <td>{{ team.stats.losses}}</td>
+          <td>{{ team.stats.ot_losses }}</td>
+          <td>{{ team.stats.points }}</td>
+          <td>{{ team.stats.point_percent }}</td>
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({ 
+      });
+    });
+  </script>
+{% endblock %}

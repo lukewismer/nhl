@@ -1,21 +1,33 @@
 import requests
 from mongoDB import update_mongo_teams
+from pymongo import MongoClient
+
+def update_teams():
+    collection_teams = connect_to_db()
+    get_team_data(collection_teams)
+
+def connect_to_db():
+    # Connects to MongoDB
+    try:
+        #conn = MongoClient(f"mongodb+srv://{os.environ.get('mongoDBuser')}:{os.environ.get('mongoDBpwd')}@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+        conn = MongoClient(f"mongodb+srv://lukeWismer:Luke4791@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+
+    except:
+        print("Could not connect to MongoDB")
+
+    return conn['NHL']['teams']
 
 def get_team_ids():
     # Gets all team Ids and returns a list
-    team_ids = []
 
-    # API Call
-    res = requests.get('https://statsapi.web.nhl.com/api/v1/teams')
-    data = res.json()
+    data = requests.get('https://statsapi.web.nhl.com/api/v1/teams').json()
 
-    # Parse through each team to get ID's
-    for team in data['teams']:
-        team_ids.append(team['id'])
+    # Parse through each team and return list of Ids
+    return [team['id'] for team in data['teams']]
 
-    return team_ids
+def get_team_data(collection_teams):
+    # Sends team data to mongoDB 
 
-def get_team_data():
     for team_id in get_team_ids():
         data = {}
         data['_id'] = team_id
@@ -25,14 +37,14 @@ def get_team_data():
         data['schedule'] = get_team_schedule(team_id)
         data['upcoming_game'] = get_team_next_game(team_id)
 
-        update_mongo_teams(team_id, data)
+        update_mongo_teams(team_id, data, collection_teams)
 
 def get_team_info(team_id):
-    info = {}
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/')
-    data = res.json()
+    # Returns team's info
 
-    info = {
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/').json()
+
+    return  {
         'name': data['teams'][0]['name'],
         'abbreviation': data['teams'][0]['abbreviation'],
         'division': {
@@ -45,17 +57,19 @@ def get_team_info(team_id):
         }
     }
 
-    return info
-
 def get_team_roster(team_id):
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/?expand=team.roster')
-    data = res.json()
+    # Returns team roster (excludes goalies)
+
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/?expand=team.roster').json()
 
     roster = {}
-
     roster['roster'] = []
+
     for player in data['teams'][0]['roster']['roster']:
+
         if player['position']['name'] != 'Goalie':
+            # Excludes Goalies
+
             roster['roster'].append(
                 {
                     'id': player['person']['id'],
@@ -67,16 +81,17 @@ def get_team_roster(team_id):
     return roster
 
 def get_team_stats(team_id):
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/stats')
-    data = res.json()
+    # Returns team stats
+
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/stats').json()
 
     stats_data = data['stats'][0]['splits'][0]['stat']
 
-    stats = {
+    return {
         'games_played': stats_data['gamesPlayed'],
         'wins': stats_data['wins'],
         'losses': stats_data['losses'],
-        'ot_wins': stats_data['ot'],
+        'ot_losses': stats_data['ot'],
         'points': stats_data['pts'],
         'point_percent': stats_data['ptPctg'],
         'goals_per_game': stats_data['goalsPerGame'],
@@ -104,11 +119,10 @@ def get_team_stats(team_id):
         }
     }
 
-    return stats
-
 def get_team_schedule(team_id):
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/schedule?season=20212022&teamId={team_id}')
-    data = res.json()
+    # Returns teams schedule for season
+
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/schedule?season=20212022&teamId={team_id}').json()
 
     schedule = {}
     schedule['schedule'] = []
@@ -129,7 +143,6 @@ def get_team_schedule(team_id):
                     'name': game['games'][0]['teams']['away']['team']['name'],
                     'score': game['games'][0]['teams']['away']['score']
                 }
-                
             }
         }
 
@@ -138,14 +151,13 @@ def get_team_schedule(team_id):
     return schedule
 
 def get_team_next_game(team_id):
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/?expand=team.schedule.next')
-    data = res.json()
+    # Returns the teams next game
 
-    
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{team_id}/?expand=team.schedule.next').json()
 
     game = data['teams'][0]['nextGameSchedule']['dates'][0]
 
-    next_game = {
+    return {
         'id': game['games'][0]['gamePk'],
         'date': game['date'],
         'status_code': game['games'][0]['status']['statusCode'],
@@ -161,7 +173,3 @@ def get_team_next_game(team_id):
             }
         }
     }
-
-    return next_game
-
-get_team_data()

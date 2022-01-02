@@ -78,8 +78,12 @@
     <tbody>
         {% for stat in player %}
         <tr>
-            {% if filter == 'nhl_stats' or filter == 'minor_leagues_stats'%}
-          <td>{{ stat.team_name }}</td>
+          {% if filter == 'nhl_stats' or filter == 'minor_leagues_stats'%}
+            {% if stat.year == '20212022' %}
+              <td><a href='/team/{{player_team.id}}'>{{ stat.team_name }}</td>
+            {% else %}
+              <td>{{ stat.team_name }}</td>
+            {% endif %}
             {% if filter == 'minor_leagues_stats' %}
             <td>{{ stat.league }}</td>
             {% endif %}

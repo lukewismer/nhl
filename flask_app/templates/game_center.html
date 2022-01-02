@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<ul class="nav nav-tabs">
+    {% for game in games %}
+        <a class="nav-link" aria-current="page" href="?game_id={{game._id}}">{{game.teams.home.abbreviation}} vs. {{game.teams.away.abbreviation}}</a>
+    {% endfor %}
+</ul>
+
+<!-- FIRST ROW -->
+<div class="game-center">
+    <div class='gc-item1'>
+        <h1>{{selected_game.teams.home.team_stats.overall.goals}}</h1>
+    </div>
+    <div class='gc-item2'>
+        <h1>{{selected_game.game_state.period_time_remaining}} - {{current_period}}</h1>
+    </div>
+    <div class='gc-item3'>
+        <h1>{{selected_game.teams.away.team_stats.overall.goals}}</h1>
+    </div>
+</div>
+
+<!-- SECOND ROW -->
+<div class='game-center'>
+    <div class="card gc-item0">
+        <div class="card-header">
+          <b><a href='/team/{{selected_game.teams.home.id}}'>{{selected_game.teams.home.name}}</a></b>
+        </div>
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item"><b>Shots: </b>{{selected_game.teams.home.team_stats.overall.shots}}</li>
+          <li class="list-group-item"><b>Pims: </b> {{selected_game.teams.home.team_stats.overall.pims}}</li>
+          <li class="list-group-item"><b>Hits: </b> {{selected_game.teams.home.team_stats.overall.hits}}</li>
+          <li class="list-group-item"><b>FO%: </b> {{selected_game.teams.home.team_stats.overall.face_off_win_percent}}</li>
+          <li class="list-group-item"><b>PP%: </b> {{selected_game.teams.home.team_stats.overall.power_play_percent}}</li>
+        </ul>
+    </div>
+
+    <div class="card gc-item1" style="width: 150px;">
+        <img src="https://www-league.nhlstatic.com/images/logos/teams-current-primary-light/{{selected_game.teams.home.id}}.svg" class="card-img-top" alt="...">
+        <div class="card-body">
+            <p class="card-text">Home</p>
+            <p class="card-text">{{home_record}}</p>
+        </div>
+    </div>
+
+    <div class="card gc-item2" style="width: 300px;">
+        <div class="card-header">
+          Play Log
+        </div>
+        <ul class="list-group list-group-flush overflow-auto">
+          <li class="list-group-item"><b>{{recent_plays[0][0:9]}}</b>{{recent_plays[0][9:]}}</li>
+          <li class="list-group-item"><b>{{recent_plays[1][0:9]}}</b>{{recent_plays[1][9:]}}</li>
+          <li class="list-group-item"><b>{{recent_plays[2][0:9]}}</b>{{recent_plays[2][9:]}}</li>
+          <li class="list-group-item"><b>{{recent_plays[3][0:9]}}</b>{{recent_plays[3][9:]}}</li>
+          <li class="list-group-item"><b>{{recent_plays[4][0:9]}}</b>{{recent_plays[4][9:]}}</li>
+        </ul>
+    </div>
+
+    <div class="card gc-item3" style="width: 150px;">
+        <img src="https://www-league.nhlstatic.com/images/logos/teams-current-primary-light/{{selected_game.teams.away.id}}.svg" class="card-img-top" alt="...">
+        <div class="card-body">
+            <p class="card-text">Away</p>
+            <p class="card-text">{{away_record}}</p>
+        </div>
+    </div>
+
+    <div class="card gc-item4">
+        <div class="card-header">
+          <b><a href='/team/{{selected_game.teams.away.id}}'>{{selected_game.teams.away.name}}</a></b>
+        </div>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><b>Shots:</b> {{selected_game.teams.away.team_stats.overall.shots}}</li>
+            <li class="list-group-item"><b>Pims:</b> {{selected_game.teams.away.team_stats.overall.pims}}</li>
+            <li class="list-group-item"><b>Hits:</b> {{selected_game.teams.away.team_stats.overall.hits}}</li>
+            <li class="list-group-item"><b>FO%:</b> {{selected_game.teams.away.team_stats.overall.face_off_win_percent}}</li>
+            <li class="list-group-item"><b>PP%:</b> {{selected_game.teams.away.team_stats.overall.power_play_percent}}</li>
+        </ul>
+    </div>
+</div>
+
+<!-- TEAM STATS -->
+
+<!-- Home Player Data -->
+<table id="home_player_data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>#</th>
+        <th>Pos</th>
+        <th>G</th>
+        <th>A</th>
+        <th>P</th>
+        <th>S</th>
+        <th>H</th>
+        <th>PIM</th>
+        <th>+/-</th>
+        <th>Blocks</th>
+        <th>PPG</th>
+        <th>PPP</th>
+        <th>SHP</th>
+        <th>TOI</th>
+      </tr>
+    </thead>
+
+    <!-- SEPERATOR -->
+    <div id="section-seperator">
+        <hr class="rounded-thick">
+        <h4> Player Stats </h4>
+        <hr class="rounded-thick">
+        <h5>{{selected_game.teams.home.name}}</h5>
+    </div>
+
+    <tbody>
+        {% for player in home_players %}
+        <tr>
+          <td><a href='/individual/{{player.id}}'>{{ player.name }}</a></td>
+          <td>{{ player.number }}</td>
+          <td>{{ player.position }}</td>
+          <td>{{ player.stats.goals }}</td>
+          <td>{{ player.stats.assists }}</td>
+          <td>{{ player.stats.goals + player.stats.assists }}</td>
+          <td>{{ player.stats.shots }}</td>
+          <td>{{ player.stats.hits }}</td>
+          <td>{{ player.stats.pims }}</td>
+          <td>{{ player.stats.plus_minus }}</td>
+          <td>{{ player.stats.blocks }}</td>
+          <td>{{ player.stats.power_play_goals }}</td>
+          <td>{{ player.stats.power_play_goals + player.stats.power_play_assists }}</td>
+          <td>{{ player.stats.short_handed_goals + player.stats.short_handed_assists}}</td>
+          <td>{{ player.stats.time_on_ice }}</td>
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+    <div id="section-seperator">
+        <hr class="rounded-thick">
+        <h5>{{selected_game.teams.away.name}}</h5>
+    </div>
+
+  <!-- Away Player Data -->
+  <table id="away_player_data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>#</th>
+        <th>Pos</th>
+        <th>G</th>
+        <th>A</th>
+        <th>P</th>
+        <th>S</th>
+        <th>H</th>
+        <th>PIM</th>
+        <th>+/-</th>
+        <th>Blocks</th>
+        <th>PPG</th>
+        <th>PPP</th>
+        <th>SHP</th>
+        <th>TOI</th>
+
+      </tr>
+    </thead>
+    <tbody>
+        {% for player in away_players %}
+        <tr>
+          <td><a href='/individual/{{player.id}}'>{{ player.name }}</a></td>
+          <td>{{ player.number }}</td>
+          <td>{{ player.position }}</td>
+          <td>{{ player.stats.goals }}</td>
+          <td>{{ player.stats.assists }}</td>
+          <td>{{ player.stats.goals + player.stats.assists }}</td>
+          <td>{{ player.stats.shots }}</td>
+          <td>{{ player.stats.hits }}</td>
+          <td>{{ player.stats.pims }}</td>
+          <td>{{ player.stats.plus_minus }}</td>
+          <td>{{ player.stats.blocks }}</td>
+          <td>{{ player.stats.power_play_goals }}</td>
+          <td>{{ player.stats.power_play_goals + player.stats.power_play_assists }}</td>
+          <td>{{ player.stats.short_handed_goals + player.stats.short_handed_assists}}</td>
+          <td>{{ player.stats.time_on_ice }}</td>
+
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+
+
+
+{% block scripts %}
+  <script>
+    $(document).ready(function () {
+      $('#home_player_data').DataTable({ 
+      });
+    });
+  </script>
+  <script>
+    $(document).ready(function () {
+      $('#away_player_data').DataTable({ 
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,52 +1,49 @@
 import requests
-import time
 from mongoDB import update_mongo_skaters
-from ml import find_ml
+from pymongo import MongoClient
 
-def main():
+def update_players():
     player_ids = get_all_teams_rosters(get_team_ids())
-    get_all_players_data(player_ids)
+    collection_skaters = connect_to_db()
+    send_all_players_data(player_ids, collection_skaters)
+
+def connect_to_db():
+    # Connects to MongoDB
+    try:
+        #conn = MongoClient(f"mongodb+srv://{os.environ.get('mongoDBuser')}:{os.environ.get('mongoDBpwd')}@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+        conn = MongoClient(f"mongodb+srv://lukeWismer:Luke4791@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+
+    except:
+        print("Could not connect to MongoDB")
+
+    return conn['NHL']['skaters']
 
 def get_team_ids():
     # Gets all team Ids and returns a list
-    team_ids = []
-
-    # API Call
-    res = requests.get('https://statsapi.web.nhl.com/api/v1/teams')
-    data = res.json()
+    data = requests.get('https://statsapi.web.nhl.com/api/v1/teams').json()
 
     # Parse through each team to get ID's
-    for team in data['teams']:
-        team_ids.append(team['id'])
-
-    return team_ids
-    
+    return [team['id'] for team in data['teams']]
+  
 def get_all_teams_rosters(team_ids):
     # Returns a list of lists with all teams rosters
-    rosters = []
 
-    # Get roster from each team
-    for team_id in team_ids:
-        rosters.append(get_team_roster(team_id))
-
-    return rosters
+    return [get_team_roster(team_id) for team_id in team_ids]
 
 def get_team_roster(id):
     # Takes a team ID and returns all skaters ids
     player_ids = []
-    
-    #API Call
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{str(id)}/?expand=team.roster')
-    data = res.json()
+
+    data = requests.get(f'https://statsapi.web.nhl.com/api/v1/teams/{str(id)}/?expand=team.roster').json()
 
     # Return a list of all the teams players ids
     for player in data['teams'][0]['roster']['roster']:
         if player['position']['code'] != "G":
             player_ids.append(player['person']['id'])
-
+            
     return player_ids
 
-def get_all_players_data(teams_player_ids):
+def send_all_players_data(teams_player_ids, collection_skaters):
     # Handles getting all players data into a dict
 
     # Ordered Lists of stats categories used as parameters
@@ -60,8 +57,7 @@ def get_all_players_data(teams_player_ids):
         for player_id in team:
             print(player_id)
             # API Call to retrieve player info
-            res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}')
-            info_data = res.json()
+            info_data = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}').json()
 
             stats_data = get_stats_request('yearByYear', player_id)
             home_away_data = get_stats_request('homeAndAway', player_id)
@@ -89,14 +85,9 @@ def get_all_players_data(teams_player_ids):
             player_data['team_splits'] = get_team_splits(team_data, api_keys, dict_keys)
             player_data['game_log_splits'] = get_game_log_splits(game_log_data, api_keys, dict_keys)
             player_data['goals_by_game_situation_splits'] = get_goals_by_game_situation(goal_situation_data)
-            player_data['on_pace_for_splits'] = get_on_pace_splits(on_pace_data, api_keys, dict_keys)
-            player_data['machine_learning'] = find_ml(player_id)
+            player_data['on_pace_for_splits'] = get_on_pace_splits(on_pace_data, api_keys, dict_keys)\
             
-            update_mongo_skaters(player_data['nhl_stats'], player_data['info'], player_data['home_away_splits'], player_data['win_loss_splits'], 
-                                        player_data['monthly_splits'], player_data['divisional_splits'], player_data['team_splits'], player_data['game_log_splits'], 
-                                        player_data['goals_by_game_situation_splits'], player_data['on_pace_for_splits'], player_data['machine_learning'], player_id, player_data)
-
-            
+            update_mongo_skaters(player_id, player_data, collection_skaters)
         
 def get_player_info(data):
     # Gets an individual players info
@@ -201,23 +192,19 @@ def get_home_away_splits(data, api_keys, dict_keys):
 
     final_data = []
 
-    api_keys = ['goals', 'assists', 'points', 'penaltyMinutes', 'shots', 'hits', 'powerPlayGoals', 'powerPlayPoints', 'powerPlayTimeOnIcePerGame', 'evenTimeOnIcePerGame',
-                'shortHandedTimeOnIcePerGame', 'shortHandedGoals', 'shortHandedPoints', 'gameWinningGoals', 'blocked', 'shotPct', 'plusMinus', 'shifts', 'games']
-
-    dict_keys = ['goals', 'assists', 'points', 'pims', 'shots', 'hits', 'power_play_goals', 'power_play_points', 'power_play_toi', 'even_toi', 'short_handed_toi',
-                    'short_handed_goals', 'short_handed_points', 'game_winning_goals', 'blocks', 'shot_percent', 'plus_minus', 'shifts', 'games_played']
-
-    if len(data['stats'][0]['splits']) > 0: 
-
+    if data['stats'][0]['splits']: 
         for split in data['stats'][0]['splits']:
             temp_data = {}
             temp_data['stats'] = {}
+
             if split['isHome'] == True:
+                # Creates filter to organize data
                 temp_data['filter'] = 'Home'
             else:
                 temp_data['filter'] = 'Away'
 
             for index, item in enumerate(api_keys):
+                # Loops to add the correct split to the dict
                 temp_data['stats'][dict_keys[index]] = check_stats(split['stat'], item)
     
             final_data.append(temp_data)
@@ -229,7 +216,7 @@ def get_win_loss_splits(data, api_keys, dict_keys):
 
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0: 
+    if data['stats'][0]['splits']: 
         for split in data['stats'][0]['splits']:
             temp_data = {}
             temp_data['stats'] = {}
@@ -252,10 +239,9 @@ def get_win_loss_splits(data, api_keys, dict_keys):
 
 def get_monthly_splits(data, api_keys, dict_keys):
     # Returns a list of given players stats in each month
-
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         for month in data['stats'][0]['splits']:
             month_data = {}
             month_data['stats'] = {}
@@ -269,15 +255,15 @@ def get_monthly_splits(data, api_keys, dict_keys):
 
 def get_division_splits(data, api_keys, dict_keys):
     # Returns a list of player stats vs each division
-
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         for division in data['stats'][0]['splits']:
             division_splits = {}
             division_splits['stats'] = {}
             division_splits['filter'] = division['opponentDivision']['name']
             division_splits['division_id'] = division['opponentDivision']['id']
+
             for index, item in enumerate(api_keys):
                 division_splits['stats'][dict_keys[index]] = check_stats(division['stat'], item)
         
@@ -287,15 +273,15 @@ def get_division_splits(data, api_keys, dict_keys):
 
 def get_team_splits(data, api_keys, dict_keys):
     # Returns a list of player stats vs each division
-
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         for team in data['stats'][0]['splits']:
             team_data = {}
             team_data['stats'] = {}
             team_data['filter'] = team['opponent']['name']
             team_data['team_id'] = team['opponent']['id']
+
             for index, item in enumerate(api_keys):
                 team_data['stats'][dict_keys[index]] = check_stats(team['stat'], item)
         
@@ -305,16 +291,16 @@ def get_team_splits(data, api_keys, dict_keys):
 
 def get_game_log_splits(data, api_keys, dict_keys):
     # Returns a list of player stats vs each division
-
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         for game in data['stats'][0]['splits']:
             game_data = {}
             game_data['stats'] = {}
             game_data['filter'] = game['opponent']['name']
             game_data['date'] = game['date']
             game_data['opponent_id'] = game['opponent']['id']
+
             for index, item in enumerate(api_keys):
                 game_data['stats'][dict_keys[index]] = check_stats(game['stat'], item)
         
@@ -326,7 +312,7 @@ def get_goals_by_game_situation(data):
     # Returns a dict with goals by game situations for each player
     situations = {}
     
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         stats = data['stats'][0]['splits'][0]['stat']
 
         # List of all of the API keys to test
@@ -345,13 +331,13 @@ def get_goals_by_game_situation(data):
 
 def get_on_pace_splits(data, api_keys, dict_keys):
     # Returns a list of player stats vs each division
-
     final_data = []
 
-    if len(data['stats'][0]['splits']) > 0:
+    if data['stats'][0]['splits']:
         for pace in data['stats'][0]['splits']:
             pace_data = {}
             pace_data['stats'] = {}
+
             for index, item in enumerate(api_keys):
                 pace_data['stats'][dict_keys[index]] = check_stats(pace['stat'], item)
         
@@ -360,14 +346,14 @@ def get_on_pace_splits(data, api_keys, dict_keys):
     return final_data
 
 def check_stats(stats, name):
-    # helper method to check that the stat eists
+    # Helper method to check that the stat exists
     if name in stats:
         return stats[name]
     else:
         return 0
 
 def check_string(data, string):
-    # helper method to check that the stat eists
+    # Helper method to check that the string exists
     if string in data:
         return data[string]
     else:
@@ -375,7 +361,5 @@ def check_string(data, string):
 
 def get_stats_request(query, player_id):
     # Takes query and player_id and adds it to stats api call
-    res = requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats?stats={query}')
-    return res.json()
+    return  requests.get(f'https://statsapi.web.nhl.com/api/v1/people/{player_id}/stats?stats={query}').json()
 
-main()
