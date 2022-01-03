@@ -65,5 +65,5 @@ def update_mongo_live_games(game_id, game_data, collection_games):
 
     for count, (key,value) in enumerate(keys.items()):
         # Updates the game with new data
-        collection_games.update_one({"_id": game_id}, {"$set": {key: value}})
+        collection_games.update_one({"_id": int(game_id)}, {"$set": {key: value}})
                 

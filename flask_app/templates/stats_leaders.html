@@ -3,9 +3,9 @@
 {% block content%}
 <div class="row">
   {% for stat in leaders%}
-  <div class="card col-md-4" style="width: 18rem; padding: 20px">
+  <div class="card col-md-3" style="width: 16rem; padding: 20px ;margin: 10px">
     <div class="card-header">
-      {{stat.title}}
+      <b>{{stat.title}}</b>
     </div>
     <ul class="list-group list-group-flush list-group-columns">
       {% for player in stat.leaders %}

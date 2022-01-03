@@ -35,7 +35,7 @@
           <td>{{ player.info.age }}</td>
           <td>{{ player.info.shoots_catches }}</td>
           <td>{{ player.info.number }}</td>
-          <td>{{ player.nhl_stats[-1].team_name }}</td>
+          <td><a href='/team/{{player.nhl_stats[-1].team_id}}'>{{ player.nhl_stats[-1].team_name }}</a></td>
           <td>{{ player.nhl_stats[-1].year[:4] + '-' + player.nhl_stats[-1].year[4:] }}</td>
           <td>{{ player.nhl_stats[-1].stats.games_played }}</td>
           <td>{{ player.nhl_stats[-1].stats.goals }}</td>

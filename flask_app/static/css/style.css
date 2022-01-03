@@ -4,6 +4,11 @@
     padding: 20px;
 }
 
+.home-page {
+    text-align: center;
+    color: brown;
+}
+
 #filter-stats {
     padding: 30px;
 }

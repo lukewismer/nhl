@@ -1,6 +1,5 @@
 import requests, time, threading, datetime
-from mongoDB import update_mongo_games, update_mongo_live_games
-from pymongo import MongoClient
+from mongoDB import update_mongo_games
 
 def update_games():
     # Handles Game updates to DB
@@ -134,8 +133,7 @@ def check_if_exists(data, key):
 def fill_roster(game_data, data):
     # Fills the roster for each team from respective game
 
-    sides = ['away', 'home']
-    for side in sides:
+    for side in ['away', 'home']:
         # Loops through twice for each side
 
         roster = []
@@ -174,7 +172,6 @@ def fill_roster(game_data, data):
                 }
 
             roster.append(player)
-
         game_data['teams'][side]['roster'] = roster
 
 def fill_plays(game_data, data):
@@ -213,7 +210,7 @@ def fill_plays(game_data, data):
             current_play['team']['name'] = play['team']['name']
             current_play['team']['abbreviation'] = play['team']['triCode']
 
-        plays.append(play)
+        plays.append(current_play)
 
     if 'game_plays' in game_data:
         game_data['game_plays']['plays'] = plays

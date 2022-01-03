@@ -1,14 +1,12 @@
-from warnings import filters
 from flask import Flask, render_template, request
 from pymongo import MongoClient
 from collections import deque
-from pymongo.message import update
 import requests
 
 app = Flask(__name__, static_folder='static')
 
 #mongodb_client = MongoClient(f"mongodb+srv://{os.environ.get('mongoDBuser')}:{os.environ.get('mongoDBpwd')}@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
-mongodb_client = MongoClient(f"mongodb+srv://lukeWismer:Luke4791@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority")
+mongodb_client = MongoClient("mongodb+srv://lukeWismer:Luke4791@nhl.8x936.mongodb.net/NHL?retryWrites=true&w=majority", connectTimeoutMS=30000, socketTimeoutMS=None, socketKeepAlive=True, connect=False, maxPoolsize=1)
 
 db = mongodb_client['NHL']
 skaters_collection = db['skaters']
@@ -24,21 +22,23 @@ def stats():
     # Gets all players and sends data to html
 
     players = skaters_collection.find({ '$and': [{'nhl_stats': { '$exists': 'true', '$ne': [] }}, {'nhl_stats.year': {'$eq': '20212022'}} ] }, {'info': 1, 'nhl_stats': 1})
-    return render_template('datatable.html', title="NHL Stat Leaders", players=players)
+    return render_template('full_stats.html', title="NHL Stat Leaders", players=players)
 
 @app.route('/individual/<player_id>/')
 def individual_skater(player_id):
     # Handles individual skater page data
 
-    # Handles the filter for stats table if applicable 
+    # Handles the filter for stats table if applicable
     stat_filter = request.args.get('filter')
+    if not stat_filter:
+        stat_filter = 'nhl_stats'
     filter_title = get_filter_title_players(stat_filter)
 
     for p in skaters_collection.find({"_id": int(player_id)}):
         # Querys the db to get the player data
         player_stats = p[str(stat_filter)]
         player = p
-    
+
     labels,ppg,apg,gpg,spg,hpg,pp_pg = [], [], [], [], [], [], []
     data_keys = ['goals', 'assists', 'points', 'pims', 'power_play_points', 'plus_minus']
 
@@ -64,7 +64,9 @@ def individual_skater(player_id):
             tppp += szn['stats']['power_play_points']
             tpm += szn['stats']['plus_minus']
 
-    career_average_values = [tg/szn_num, ta/szn_num, tp/szn_num, tpim/szn_num, tppp/szn_num, tpm/szn_num]
+    career_average_values = [tg, ta, tp, tpim, tppp, tpm]
+    if szn_num != 0:
+        career_average_values = [stat/szn_num for stat in career_average_values]
 
     gl_labels, gl_p_values = [], []
     for szn in player['game_log_splits']:
@@ -97,8 +99,8 @@ def individual_skater(player_id):
             op_labels.append(key.replace("_", " "))
             op_values.append(int(value))
 
-    return render_template('individual_stats.html', player=player_stats, title=player['info']['name'], filter=stat_filter, 
-                            filter_title=filter_title, player_id=player_id, player_info=player['info'],  ppg_values=ppg, gpg_values=gpg, apg_values=apg, spg_values=spg, hpg_values=hpg, 
+    return render_template('individual_stats.html', player=player_stats, title=player['info']['name'], filter=stat_filter,
+                            filter_title=filter_title, player_id=player_id, player_info=player['info'],  ppg_values=ppg, gpg_values=gpg, apg_values=apg, spg_values=spg, hpg_values=hpg,
                             pp_pg_values=pp_pg, labels=labels, t_labels=t_labels, t_p_values=t_p_values, gl_labels=gl_labels, gl_p_values=gl_p_values, gs_g_values=gs_g_values, gs_labels=gs_labels,
                             op_labels=op_labels, op_values=op_values, ca_values=career_average_values, player_team=player['team'])
 
@@ -107,21 +109,21 @@ def leaders():
     # Advanced MongoDB Queries to get top 5 leaders in each category
 
     goal_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.goals', 0]}}
         }},
         {'$sort': {'stats': -1}},
         {'$limit': 5}
         ])
-    
+
     assist_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.assists', 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -129,10 +131,10 @@ def leaders():
         ])
 
     point_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.points', 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -140,10 +142,10 @@ def leaders():
         ])
 
     shots_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.shots', 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -151,10 +153,10 @@ def leaders():
         ])
 
     hits_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.hits', 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -162,10 +164,10 @@ def leaders():
         ])
 
     pim_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, {'$toInt': '$nhl_stats.stats.pims'}, 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -173,10 +175,10 @@ def leaders():
         ])
 
     blocks_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.hits', 0]}}
         }},
         {'$sort': {'stats': -1}},
@@ -184,16 +186,16 @@ def leaders():
         ])
 
     pm_leaders = skaters_collection.aggregate([
-        {'$unwind':"$nhl_stats"}, 
+        {'$unwind':"$nhl_stats"},
         {'$group': {
             '_id': '$_id',
-            'name': {"$first": "$info.name"}, 
+            'name': {"$first": "$info.name"},
             "stats": {"$last": {"$cond": [{ '$eq': ["$nhl_stats.year", '20212022']}, '$nhl_stats.stats.plus_minus', 0]}}
         }},
         {'$sort': {'stats': -1}},
         {'$limit': 5}
         ])
-    
+
     leaders = [{'title': 'Goal Leaders', 'leaders': goal_leaders}, {'title': 'Assist Leaders', 'leaders': assist_leaders}, {'title': 'Point Leaders', 'leaders': point_leaders},
                  {'title': 'Shot Leaders', 'leaders': shots_leaders}, {'title': 'Hit Leaders', 'leaders': hits_leaders}, {'title': 'PIM Leaders', 'leaders': pim_leaders},
                  {'title': 'Block Leaders', 'leaders': blocks_leaders}, {'title': '+/- Leaders', 'leaders': pm_leaders}]
@@ -241,9 +243,9 @@ def individual_team(team_id):
         # MongoDB function to count how many documents are found
 
         if check != 0:
-            player_data = skaters_collection.find_one({"_id": int(player_id['id'])}, 
+            player_data = skaters_collection.find_one({"_id": int(player_id['id'])},
                                             {"_id": 1, "nhl_stats": 1, "info": 1, "position": 1})
-            if player_data['nhl_stats']:                    
+            if player_data['nhl_stats']:
                 temp_roster.append(player_data)
 
     upcoming_games = []
@@ -265,10 +267,9 @@ def game_center():
     # Handles Game Center Page and Data
 
     updated_game_data=display_current_game_updates(get_current_games()) # Gets all new game updates
-    
-    
+
     return render_template('game_center.html', title='Game Center', games=updated_game_data['games'], selected_game=updated_game_data['selected_game'][0], home_record=updated_game_data['home_team_record'],
-                    away_record=updated_game_data['away_team_record'], current_period=updated_game_data['current_period'], recent_plays=updated_game_data['recent_plays'], 
+                    away_record=updated_game_data['away_team_record'], current_period=updated_game_data['current_period'], recent_plays=updated_game_data['recent_plays'],
                     home_players=updated_game_data['home_players'], away_players=updated_game_data['away_players'])
 
 #------ Helper methods
@@ -277,7 +278,12 @@ def get_current_games():
 
     current_games_data = requests.get('https://statsapi.web.nhl.com/api/v1/schedule').json()
 
-    return [games['gamePk'] for games in current_games_data['dates'][0]['games']]
+    games = []
+    for game in current_games_data['dates'][0]['games']:
+        if game['status']['detailedState'] != "Postponed":
+            games.append(game['gamePk'])
+
+    return games
 
 def display_current_game_updates(current_games):
     # Returns all new updates in live games
@@ -286,7 +292,7 @@ def display_current_game_updates(current_games):
     selected_game, games = [], []
 
     for game_id in current_games:
-        # Add all 
+        # Add all
         game = games_collecion.find({"_id": game_id})[0]
         games.append(game)
         if str(game_id) == selected_game_id:
@@ -299,7 +305,7 @@ def display_current_game_updates(current_games):
     current_period = get_current_period(selected_game[0]['game_state']['current_period'])
 
     recent_plays = []
-    if 'plays' in selected_game[0]['game_plays'] and not selected_game[0]['game_plays']['plays'] and len(selected_game[0]['game_plays']['plays']) > 4:
+    if 'plays' in selected_game[0]['game_plays'] and len(selected_game[0]['game_plays']['plays']) > 4:
         # Creates a list with 5 most recent plays
         plays = [(selected_game[0]['game_plays']['plays'][-1]),(selected_game[0]['game_plays']['plays'][-2]),(selected_game[0]['game_plays']['plays'][-3]),
                                     (selected_game[0]['game_plays']['plays'][-4]),(selected_game[0]['game_plays']['plays'][-5])]
@@ -307,10 +313,10 @@ def display_current_game_updates(current_games):
         for play in plays:
             # Format the plays
 
-            p = f"{play['about']['periodTimeRemaining']} {play['about']['ordinalNum']} "
-            if 'team' in play:
-                p += f"{play['team']['triCode']} "
-            p += f"{play['result']['description']}"
+            p = f"{play['time']['time_remaining']} {get_current_period(play['time']['period'])} "
+            if 'team' in play and 'abbreviation' in play['team']:
+                p += f"{play['team']['abbreviation']} "
+            p += f"{play['description']}"
             recent_plays.append(p)
     else:
         # If there are not enough plays yet, display NA
@@ -319,7 +325,7 @@ def display_current_game_updates(current_games):
     home_team_record, home_players = get_live_game_data_teams(selected_game, 'home')
     away_team_record, away_players = get_live_game_data_teams(selected_game, 'away')
 
-    return {'games': games, 'selected_game': selected_game, 'home_team_record': home_team_record, 'away_team_record': away_team_record, 
+    return {'games': games, 'selected_game': selected_game, 'home_team_record': home_team_record, 'away_team_record': away_team_record,
             'current_period': current_period, 'recent_plays': recent_plays, 'home_players': home_players, 'away_players': away_players}
 
 def get_filter_title_players(stat_filter):
